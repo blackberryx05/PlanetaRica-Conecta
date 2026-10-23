@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlanetaRica Conecta - Chatbot WhatsApp Accesible</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Tipografía Inter para alta legibilidad */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0f172a;
+            color: #111b21;
+        }
+
+        /* Estilos personalizados para emular la interfaz de WhatsApp */
+        .chat-bg {
+            background-color: #ECE5DD;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Personalización de burbujas */
+        .bot-bubble {
+            background-color: #FFFFFF;
+            border-left: 5px solid #008000; /* Verde institucional Planeta Rica */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+        .user-bubble {
+            background-color: #DCF8C6;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+        /* Scrollbar suave */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Animación de entrada */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-anim {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+
+        /* Escribiendo... */
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Bandera tricolor Planeta Rica */
+        .bandera-bar {
+            background: linear-gradient(90deg, #2146F0 33%, #008000 33% 66%, #CE1C00 66%);
+        }
+
+        /* Pulso de grabación de voz */
+        .recording-pulse {
+            animation: pulseRed 1.2s infinite;
+        }
+        @keyframes pulseRed {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(206, 28, 0, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(206, 28, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(206, 28, 0, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-1 sm:p-4">
+
+    <!-- MOCKUP SMARTPHONE ACCESIBLE -->
+    <div class="w-full max-w-[440px] h-[95vh] max-h-[900px] bg-black rounded-[42px] p-2.5 sm:p-3 shadow-2xl border-4 border-gray-800 flex flex-col relative overflow-hidden">
+        
+        <!-- BARRA SUPERIOR SMARTPHONE (Notch) -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-5 bg-black rounded-b-2xl z-50 flex items-center justify-center">
+            <div class="w-12 h-1 bg-gray-700 rounded-full"></div>
+            <div class="w-2.5 h-2.5 bg-gray-800 rounded-full ml-3"></div>
+        </div>
+
+        <!-- CONTENIDO INTERNO DEL CHAT -->
+        <div class="w-full h-full bg-white rounded-[32px] flex flex-col overflow-hidden relative pt-3">
+            
+            <!-- BANDA INSTITUCIONAL CON COLORES DE PLANETA RICA -->
+            <div class="bandera-bar h-1.5 w-full"></div>
+
+            <!-- ENCABEZADO WHATSAPP (#075E54) -->
+            <header class="bg-[#075E54] text-white px-3 py-2.5 flex items-center justify-between shadow-md z-10">
+                <div class="flex items-center space-x-2.5">
+                    <button class="text-white hover:bg-white/10 p-1 rounded-full transition" title="Volver al Menú" onclick="restartChat()">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    
+                    <!-- Avatar PRC -->
+                    <div class="relative">
+                        <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-[#2146F0] via-[#008000] to-[#CE1C00] p-0.5 flex items-center justify-center shadow-sm">
+                            <div class="w-full h-full bg-[#075E54] rounded-full flex items-center justify-center font-bold text-yellow-300 text-sm tracking-wider">
+                                PRC
+                            </div>
+                        </div>
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-400 border-2 border-[#075E54] rounded-full"></span>
+                    </div>
+
+                    <!-- Nombre y Estado -->
+                    <div class="leading-tight">
+                        <div class="flex items-center gap-1">
+                            <h1 class="font-bold text-base tracking-wide text-white">PlanetaRica Conecta</h1>
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-yellow-300 fill-yellow-300 stroke-[#075E54]"></i>
+                        </div>
+                        <p class="text-xs text-green-100 flex items-center gap-1">
+                            <span class="inline-block w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span>
+                            Cuenta Oficial • En línea
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Accesibles -->
+                <div class="flex items-center space-x-1">
+                    <button onclick="toggleAudioAssist()" id="btnAudioAssist" class="bg-amber-400 hover:bg-amber-300 text-gray-900 p-2 rounded-full transition shadow flex items-center justify-center" title="Activar/Desactivar Voz para Adultos Mayores">
+                        <i data-lucide="volume-2" class="w-5 h-5"></i>
+                    </button>
+                    <!-- Botón de llamada estándar de WhatsApp -->
+                    <button onclick="makeCall('Atención Ciudadana Planeta Rica', '3000000000')" class="hover:bg-white/10 text-white p-2 rounded-full transition flex items-center justify-center" title="Llamar">
+                        <i data-lucide="phone" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- BARRA DE ACCESOS RÁPIDOS DE UN SOLO TOQUE -->
+            <div class="bg-[#128C7E] px-2 py-2 flex gap-1.5 overflow-x-auto no-scrollbar shadow-inner text-xs border-t border-green-700/30">
+                <button onclick="sendQuickOption('1')" class="bg-white/95 hover:bg-white text-[#075E54] font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🍔 1. Gastronomía
+                </button>
+                <button onclick="sendQuickOption('2')" class="bg-white/95 hover:bg-white text-[#075E54] font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🛠️ 2. Servicios
+                </button>
+                <button onclick="sendQuickOption('3')" class="bg-white/95 hover:bg-white text-[#075E54] font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🛒 3. Tiendas
+                </button>
+                <button onclick="sendQuickOption('4')" class="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🏥 4. Urgencias
+                </button>
+                <button onclick="sendQuickOption('5')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🏛️ 5. Alcaldía
+                </button>
+                <button onclick="sendQuickOption('6')" class="bg-yellow-300 hover:bg-yellow-200 text-gray-900 font-extrabold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm border border-yellow-400">
+                    📝 6. Registrarme
+                </button>
+                <button onclick="sendQuickOption('7')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm transition active:scale-95 text-xs sm:text-sm">
+                    🛵 7. Tarifa Domicilios
+                </button>
+            </div>
+
+            <!-- ÁREA DE CONVERSACIÓN / CHAT -->
+            <main id="chatWindow" class="flex-1 chat-bg p-3 overflow-y-auto chat-scroll flex flex-col space-y-3">
+                <div class="text-center my-1">
+                    <span class="bg-[#FFF8E7] text-[#856404] text-[11px] font-semibold px-3 py-1 rounded-lg border border-[#FFEBAA] shadow-sm inline-block max-w-[90%]">
+                        🔒 Las conversaciones están cifradas. Directorio Oficial e Incluyente de Planeta Rica.
+                    </span>
+                </div>
+            </main>
+
+            <!-- INDICADOR DE ESCRIBIENDO BOT -->
+            <div id="typingIndicator" class="hidden chat-bg px-4 py-1 text-xs text-gray-600 flex items-center space-x-1">
+                <span class="font-medium text-[#075E54]">PlanetaRica Conecta está escribiendo</span>
+                <div class="flex space-x-1 ml-1">
+                    <div class="w-1.5 h-1.5 bg-[#075E54] rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-[#075E54] rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-[#075E54] rounded-full typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- ENTRADA DE TEXTO Y DICTADO POR VOZ -->
+            <footer class="bg-[#F0F2F5] p-2 flex items-center space-x-2 border-t border-gray-200">
+                <div class="flex-1 bg-white rounded-full px-3 py-1.5 flex items-center shadow-sm border border-gray-300 focus-within:border-[#075E54]">
+                    <button onclick="toggleVoiceInput()" id="btnVoiceInput" class="text-gray-500 hover:text-green-700 p-1.5 rounded-full transition mr-1" title="Dictar por voz (Especial para adultos mayores)">
+                        <i data-lucide="mic" class="w-5 h-5"></i>
+                    </button>
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="Escribe número u opción..." 
+                        class="w-full bg-transparent focus:outline-none text-base text-gray-900 placeholder-gray-500"
+                        autocomplete="off"
+                        onkeydown="if(event.key==='Enter') sendMessage()"
+                    >
+                </div>
+                <button 
+                    onclick="sendMessage()" 
+                    class="bg-[#008000] hover:bg-green-700 text-white p-3 rounded-full flex items-center justify-center shadow-md active:scale-95 transition flex-shrink-0"
+                    title="Enviar mensaje"
+                >
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- MODAL DE ACCIONES Y LLAMADAS -->
+    <div id="actionModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center shadow-2xl border-2 border-[#2146F0] message-anim">
+            <div class="w-12 h-12 bg-red-100 text-[#CE1C00] rounded-full flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="phone-call" class="w-6 h-6"></i>
+            </div>
+            <h3 id="modalTitle" class="font-bold text-lg text-gray-900 mb-1">Iniciando Llamada...</h3>
+            <p id="modalBody" class="text-sm text-gray-600 mb-4">Conectando con la entidad o comercio en Planeta Rica.</p>
+            <button onclick="closeModal()" class="w-full bg-[#2146F0] text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition">
+                Cerrar / Entendido
+            </button>
+        </div>
+    </div>
+
+    <!-- SCRIPT EN VANILLA JS CON LÓGICA COMPLETA -->
+    <script>
+        // --- BASE DE DATOS DE PLANETA RICA ---
+        const initialDirectory = {
+            '1': [
+                { nombre: "Asadero El Buen Sabor", propietario: "Don Carlos Mendoza", barrio: "Barrio San José", tel: "3116549821", rating: "4.9", verificado: true, especialidad: "Carne asada y comida típica" },
+                { nombre: "Comidas Rápidas El Planetario", propietario: "Doña María Suárez", barrio: "Barrio Centro", tel: "3004567890", rating: "4.8", verificado: true, especialidad: "Hamburguesas y perros calientes" },
+                { nombre: "Picadas y Quesos La Bellaguajira", propietario: "Jorge Eliecer Villa", barrio: "Barrio Los Laureles", tel: "3137894561", rating: "5.0", verificado: true, especialidad: "Queso costeño y suero atollabuey" }
+            ],
+            '2': [
+                { nombre: "Cerrajería y Plomería El Loro", propietario: "Maestro Pedro Gómez", barrio: "Barrio San José", tel: "3206541239", rating: "4.9", verificado: true, especialidad: "Urgencias 24h y llaves con chip" },
+                { nombre: "Servicio Técnico Electrodomésticos Córdoba", propietario: "Roberto Hoyos", barrio: "Barrio Bolivariano", tel: "3019876543", rating: "4.7", verificado: true, especialidad: "Arreglo de lavadoras y neveras" },
+                { nombre: "Servicios de Pintura y Obra Blanca", propietario: "Alfonso 'El Poncho' Pérez", barrio: "Barrio La Candelaria", tel: "3145678901", rating: "4.8", verificado: true, especialidad: "Pintura residencial e impermeabilización" }
+            ],
+            '3': [
+                { nombre: "Tienda y Granero La Grandeza", propietario: "Señora Carmen Ruiz", barrio: "Barrio San José", tel: "3101234567", rating: "5.0", verificado: true, especialidad: "Víveres a domicilio y abarrotes" },
+                { nombre: "Supertienda El Progreso", propietario: "Luís Fernando Jaramillo", barrio: "Barrio Palma Soriano", tel: "3123456789", rating: "4.8", verificado: true, especialidad: "Frutas, verduras y granos" }
+            ]
+        };
+
+        // Estado del usuario
+        let conversationState = {
+            step: 'MAIN_MENU',
+            selectedCategory: null,
+            registrationData: {}
+        };
+
+        let isAudioVoiceEnabled = false; // Modo lectura por audio
+        let isRecordingVoice = false;   // Modo dictado por voz
+
+        // Elementos DOM
+        const chatWindow = document.getElementById('chatWindow');
+        const userInput = document.getElementById('userInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        window.onload = () => {
+            lucide.createIcons();
+            showInitialWelcome();
+        };
+
+        // --- LECTURA POR VOZ PARA ADULTOS MAYORES (Speech Synthesis) ---
+        function toggleAudioAssist() {
+            isAudioVoiceEnabled = !isAudioVoiceEnabled;
+            const btn = document.getElementById('btnAudioAssist');
+            if (isAudioVoiceEnabled) {
+                btn.className = "bg-green-500 text-white p-2 rounded-full transition shadow ring-2 ring-yellow-300";
+                speakText("Asistente de audio activado. El bot leerá los mensajes para usted.");
+            } else {
+                btn.className = "bg-amber-400 text-gray-900 p-2 rounded-full transition shadow";
+                window.speechSynthesis?.cancel();
+            }
+        }
+
+        function speakText(text) {
+            if (!isAudioVoiceEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Detener lecturas anteriores
+            const cleanText = text.replace(/<[^>]*>?/gm, ''); // Quitar HTML
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'es-CO';
+            utterance.rate = 0.95; // Velocidad pausada
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- DICTADO POR VOZ (Speech Recognition) ---
+        function toggleVoiceInput() {
+            const btn = document.getElementById('btnVoiceInput');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                alert("El reconocimiento de voz no está soportado en este navegador.");
+                return;
+            }
+
+            if (!isRecordingVoice) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-CO';
+                recognition.interimResults = false;
+
+                recognition.onstart = () => {
+                    isRecordingVoice = true;
+                    btn.classList.add('text-red-600', 'recording-pulse');
+                    userInput.placeholder = "Escuchando su voz...";
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    sendMessage();
+                };
+
+                recognition.onerror = () => {
+                    stopRecording(btn);
+                };
+
+                recognition.onend = () => {
+                    stopRecording(btn);
+                };
+
+                recognition.start();
+            }
+        }
+
+        function stopRecording(btn) {
+            isRecordingVoice = false;
+            btn.classList.remove('text-red-600', 'recording-pulse');
+            userInput.placeholder = "Escribe número u opción...";
+        }
+
+        // --- RENDEREADO DE MENSAJES ---
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function appendBotMessage(htmlContent) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start message-anim max-w-[88%] mr-auto';
+            msgDiv.innerHTML = `
+                <div class="bot-bubble rounded-2xl rounded-tl-none p-3 text-gray-900 text-sm leading-relaxed relative">
+                    <div class="pr-2">${htmlContent}</div>
+                    <div class="flex items-center justify-between border-t border-gray-100 pt-1 mt-1.5 text-[10px] text-gray-400">
+                        <button onclick="speakText(this.closest('.bot-bubble').innerText)" class="text-[#075E54] hover:underline font-semibold flex items-center gap-0.5">
+                            🔊 Escuchar
+                        </button>
+                        <span>${getCurrentTime()}</span>
+                    </div>
+                </div>
+            `;
+            chatWindow.appendChild(msgDiv);
+            scrollToBottom();
+            lucide.createIcons();
+
+            // Si está activado el audio general
+            speakText(msgDiv.innerText);
+        }
+
+        function appendUserMessage(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-end justify-end message-anim max-w-[85%] ml-auto';
+            msgDiv.innerHTML = `
+                <div class="user-bubble rounded-2xl rounded-tr-none p-3 text-gray-900 text-sm leading-relaxed relative">
+                    <p class="font-medium">${escapeHTML(text)}</p>
+                    <div class="flex items-center justify-end space-x-1 mt-1 -mb-1">
+                        <span class="text-[10px] text-gray-500 font-medium">${getCurrentTime()}</span>
+                        <i data-lucide="check-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                    </div>
+                </div>
+            `;
+            chatWindow.appendChild(msgDiv);
+            scrollToBottom();
+            lucide.createIcons();
+        }
+
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function showTyping(show) {
+            typingIndicator.classList.toggle('hidden', !show);
+            scrollToBottom();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        // --- FLUJO INICIAL ---
+        function showInitialWelcome() {
+            chatWindow.innerHTML = `
+                <div class="text-center my-1">
+                    <span class="bg-[#FFF8E7] text-[#856404] text-[11px] font-semibold px-3 py-1 rounded-lg border border-[#FFEBAA] shadow-sm inline-block max-w-[90%]">
+                        🔒 Las conversaciones están cifradas. Directorio Oficial e Incluyente de Planeta Rica.
+                    </span>
+                </div>
+            `;
+
+            const welcomeHTML = `
+                <p class="font-bold text-base text-[#075E54] mb-1">¡Hola, vecino(a) de Planeta Rica! 👋🇨🇴</p>
+                <p class="mb-2">Te damos la bienvenida a <strong>PlanetaRica Conecta</strong>, la plataforma para apoyar el comercio local e información municipal.</p>
+                <p class="font-semibold text-gray-800 mb-2">Selecciona o digita el número de tu opción:</p>
+                
+                <div class="space-y-1.5 my-2">
+                    <button onclick="sendQuickOption('1')" class="w-full text-left bg-gray-50 hover:bg-green-50 border border-gray-200 p-2.5 rounded-xl font-medium text-gray-800 flex items-center transition active:bg-green-100">
+                        <span class="bg-[#008000] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">1</span>
+                        Gastronomía y Comidas 🍔
+                    </button>
+                    <button onclick="sendQuickOption('2')" class="w-full text-left bg-gray-50 hover:bg-green-50 border border-gray-200 p-2.5 rounded-xl font-medium text-gray-800 flex items-center transition active:bg-green-100">
+                        <span class="bg-[#008000] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">2</span>
+                        Servicios del Hogar 🛠️
+                    </button>
+                    <button onclick="sendQuickOption('3')" class="w-full text-left bg-gray-50 hover:bg-green-50 border border-gray-200 p-2.5 rounded-xl font-medium text-gray-800 flex items-center transition active:bg-green-100">
+                        <span class="bg-[#008000] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">3</span>
+                        Tiendas y Abarrotes 🛒
+                    </button>
+                    <button onclick="sendQuickOption('4')" class="w-full text-left bg-red-50 hover:bg-red-100 border border-red-200 p-2.5 rounded-xl font-medium text-gray-800 flex items-center transition active:bg-red-100">
+                        <span class="bg-[#CE1C00] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">4</span>
+                        Urgencias y Emergencias 🏥
+                    </button>
+                    <button onclick="sendQuickOption('5')" class="w-full text-left bg-blue-50 hover:bg-blue-100 border border-blue-200 p-2.5 rounded-xl font-medium text-gray-800 flex items-center transition active:bg-blue-100">
+                        <span class="bg-[#2146F0] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">5</span>
+                        Trámites Alcaldía Municipal 🏛️
+                    </button>
+                    <button onclick="sendQuickOption('6')" class="w-full text-left bg-yellow-50 hover:bg-yellow-100 border border-yellow-300 p-2.5 rounded-xl font-bold text-gray-900 flex items-center transition active:bg-yellow-200">
+                        <span class="bg-[#CE1C00] text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">6</span>
+                        Registrar mi negocio 📝
+                    </button>
+                    <button onclick="sendQuickOption('7')" class="w-full text-left bg-purple-50 hover:bg-purple-100 border border-purple-200 p-2.5 rounded-xl font-bold text-purple-900 flex items-center transition active:bg-purple-200">
+                        <span class="bg-purple-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center mr-2">7</span>
+                        Tarifa de Moto-Domicilios 🛵
+                    </button>
+                </div>
+                <p class="text-[11px] text-gray-500 italic mt-1">Puedes escribir el número (1 al 7) o presionar el micrófono 🎙️ para dictar por voz.</p>
+            `;
+
+            setTimeout(() => appendBotMessage(welcomeHTML), 300);
+            conversationState.step = 'MAIN_MENU';
+        }
+
+        // --- MANEJO DE MENSAJES ---
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendUserMessage(text);
+            userInput.value = '';
+            processUserInput(text);
+        }
+
+        function sendQuickOption(optionText) {
+            appendUserMessage(optionText);
+            processUserInput(optionText);
+        }
+
+        // LÓGICA PRINCIPAL
+        function processUserInput(input) {
+            showTyping(true);
+
+            setTimeout(() => {
+                showTyping(false);
+                const currentStep = conversationState.step;
+
+                // 1. MENÚ PRINCIPAL
+                if (currentStep === 'MAIN_MENU') {
+                    if (['1', '2', '3'].includes(input)) {
+                        conversationState.selectedCategory = input;
+                        conversationState.step = 'WAITING_NEIGHBORHOOD';
+                        const catNames = { '1': 'Gastronomía 🍔', '2': 'Servicios del Hogar 🛠️', '3': 'Tiendas y Abarrotes 🛒' };
+                        
+                        appendBotMessage(`
+                            <p class="font-bold text-base text-[#075E54] mb-1">Elegiste: ${catNames[input]}</p>
+                            <p class="mb-2">Para conectarte con el comercio más cercano, <strong>escribe el nombre de tu barrio o sector</strong> en Planeta Rica:</p>
+                            <div class="bg-blue-50 border-l-4 border-[#2146F0] p-2 rounded text-xs text-blue-900 mb-2">
+                                💡 <em>Ejemplos: Barrio San José, Centro, Los Laureles, La Candelaria, Palma Soriano, etc.</em>
+                            </div>
+                            <p class="text-xs text-gray-500">O escribe "<strong>todos</strong>" para ver en todo el municipio.</p>
+                        `);
+                    } else if (input === '4') {
+                        // Urgencias
+                        appendBotMessage(`
+                            <p class="font-bold text-base text-[#CE1C00] mb-2">🏥 Directorio de Urgencias Locales</p>
+                            <div class="space-y-2">
+                                <div class="bg-white border-2 border-red-200 p-2.5 rounded-xl flex items-center justify-between shadow-sm">
+                                    <div>
+                                        <p class="font-bold text-sm text-gray-900">ESE Hospital San Nicolás</p>
+                                        <p class="text-xs text-gray-500">Cl. 15 #17-51, Barrio San Nicolás</p>
+                                    </div>
+                                    <button onclick="makeCall('ESE Hospital San Nicolás', '123')" class="bg-[#CE1C00] text-white text-xs px-3 py-1.5 rounded-lg font-bold">Llamar</button>
+                                </div>
+                                <div class="bg-white border-2 border-blue-200 p-2.5 rounded-xl flex items-center justify-between shadow-sm">
+                                    <div>
+                                        <p class="font-bold text-sm text-gray-900">Estación de Policía Local</p>
+                                        <p class="text-xs text-gray-500">Atención Ciudadana 24/7</p>
+                                    </div>
+                                    <button onclick="makeCall('Policía Planeta Rica', '123')" class="bg-[#2146F0] text-white text-xs px-3 py-1.5 rounded-lg font-bold">Llamar</button>
+                                </div>
+                            </div>
+                        `);
+                        appendBotMessage(`<button onclick="restartChat()" class="mt-1 bg-[#075E54] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center">🏠 Menú Principal</button>`);
+                    } else if (input === '5') {
+                        // Alcaldía
+                        appendBotMessage(`
+                            <p class="font-bold text-base text-[#2146F0] mb-2">🏛️ Alcaldía Municipal de Planeta Rica</p>
+                            <div class="bg-white border border-blue-200 p-3 rounded-xl text-xs space-y-1.5 mb-2">
+                                <p><strong>📍 Dirección:</strong> Cl. 17 #10, Planeta Rica, Córdoba</p>
+                                <p><strong>⏰ Horario:</strong> Lunes a Viernes (8:00 AM - 12:00 PM / 2:00 PM - 5:00 PM)</p>
+                            </div>
+                            <button onclick="openWhatsApp('Alcaldía Municipal', '3000000000')" class="bg-[#008000] text-white font-bold text-xs py-2 px-3 rounded-xl w-full flex items-center justify-center gap-1">💬 Contactar Atención Ciudadana</button>
+                        `);
+                        appendBotMessage(`<button onclick="restartChat()" class="mt-1 bg-[#075E54] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center">🏠 Menú Principal</button>`);
+                    } else if (input === '6') {
+                        // Registro de Negocio
+                        conversationState.step = 'REG_STEP1';
+                        conversationState.registrationData = {};
+                        appendBotMessage(`
+                            <p class="font-bold text-base text-[#075E54] mb-1">📝 Pre-Registro de Comercio Local</p>
+                            <p class="mb-2">Inicia el proceso para obtener el <strong>Sello de Comercio Local Verificado ✅</strong>.</p>
+                            <p class="bg-yellow-50 text-amber-800 text-xs p-2 rounded border border-yellow-200 mb-2">🔒 Nota: Se requiere ser mayor de 18 años para registrar comerciante.</p>
+                            <p class="font-semibold text-gray-800">Paso 1 de 6:</p>
+                            <p class="text-sm">¿Cuál es el <strong>Nombre de tu Negocio o Servicio</strong>?</p>
+                        `);
+                    } else if (input === '7') {
+                        // Calculadora de Tarifas Domicilios
+                        appendBotMessage(`
+                            <p class="font-bold text-base text-purple-900 mb-2">🛵 Tarifas Estimadas Moto-Taxis y Domicilios</p>
+                            <div class="bg-white border border-purple-200 p-3 rounded-xl text-xs space-y-2 mb-2">
+                                <p><strong>📍 Sector Centro ↔ Barrios Cercanos:</strong> $3.000 - $4.000 COP</p>
+                                <p><strong>📍 Periferia (Palma Soriano / Los Laureles):</strong> $4.500 - $5.500 COP</p>
+                                <p><strong>🌙 Horario Nocturno (Llegada de Buses):</strong> +$1.000 COP</p>
+                            </div>
+                            <p class="text-xs text-gray-500">Tarifas de referencia comunitaria orientativa para la zona urbana de Planeta Rica.</p>
+                        `);
+                        appendBotMessage(`<button onclick="restartChat()" class="mt-1 bg-[#075E54] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center">🏠 Menú Principal</button>`);
+                    } else {
+                        appendBotMessage(`
+                            <div class="bg-red-50 border-l-4 border-[#CE1C00] p-2.5 rounded">
+                                <p class="font-bold text-[#CE1C00] text-sm">⚠️ Opción no válida</p>
+                                <p class="text-xs text-gray-700 mt-0.5">Por favor digita un número del <strong>1 al 7</strong> o pulsa un botón en pantalla.</p>
+                            </div>
+                        `);
+                    }
+                } 
+                
+                // 2. BUSQUEDA POR BARRIO
+                else if (currentStep === 'WAITING_NEIGHBORHOOD') {
+                    const barrioBusqueda = input.toLowerCase();
+                    const category = conversationState.selectedCategory;
+                    const items = initialDirectory[category] || [];
+
+                    let resultados = items;
+                    if (!barrioBusqueda.includes('todo')) {
+                        resultados = items.filter(i => 
+                            i.barrio.toLowerCase().includes(barrioBusqueda) || 
+                            barrioBusqueda.includes(i.barrio.toLowerCase())
+                        );
+                    }
+
+                    if (resultados.length === 0) {
+                        appendBotMessage(`<p class="text-gray-800 mb-2">No hallamos comercios registrados exactamente en "<strong>${escapeHTML(input)}</strong>", pero te mostramos las opciones más destacadas:</p>`);
+                        renderBusinessCards(items);
+                    } else {
+                        appendBotMessage(`<p class="font-bold text-[#075E54] mb-2">Comerciantes verificados encontrados en Planeta Rica:</p>`);
+                        renderBusinessCards(resultados);
+                    }
+
+                    conversationState.step = 'MAIN_MENU';
+                    appendBotMessage(`
+                        <button onclick="restartChat()" class="mt-2 bg-[#2146F0] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center hover:bg-blue-700 transition">
+                            🔄 Volver al Menú Principal
+                        </button>
+                    `);
+                }
+
+                // 3. PASOS DE REGISTRO
+                else if (currentStep === 'REG_STEP1') {
+                    conversationState.registrationData.nombre = input;
+                    conversationState.step = 'REG_STEP2';
+                    appendBotMessage(`
+                        <p class="font-semibold text-gray-800">Paso 2 de 6:</p>
+                        <p class="text-sm">¿Cuál es la <strong>Categoría de tu negocio</strong>?</p>
+                        <p class="text-xs text-gray-500 italic mt-1">Ej: Panadería, Cerrajería, Restaurante, Barbería, Víveres, etc.</p>
+                    `);
+                }
+                else if (currentStep === 'REG_STEP2') {
+                    conversationState.registrationData.categoria = input;
+                    conversationState.step = 'REG_STEP3';
+                    appendBotMessage(`
+                        <p class="font-semibold text-gray-800">Paso 3 de 6:</p>
+                        <p class="text-sm">¿Nombre completo del Propietario(a)?</p>
+                    `);
+                }
+                else if (currentStep === 'REG_STEP3') {
+                    conversationState.registrationData.propietario = input;
+                    conversationState.step = 'REG_STEP4';
+                    appendBotMessage(`
+                        <p class="font-semibold text-gray-800">Paso 4 de 6:</p>
+                        <p class="text-sm">¿Cuál es tu <strong>Fecha de Nacimiento</strong>?</p>
+                        <p class="text-xs text-gray-500 italic mt-1">Ejemplo: 15/08/1978 o 1978</p>
+                    `);
+                }
+                else if (currentStep === 'REG_STEP4') {
+                    const dateMatch = input.match(/\b(19\d\d|20\d\d)\b/);
+                    let age = null;
+                    if (dateMatch) {
+                        const birthYear = parseInt(dateMatch[0], 10);
+                        age = new Date().getFullYear() - birthYear;
+                    }
+
+                    if (age !== null && age < 18) {
+                        appendBotMessage(`
+                            <div class="bg-red-50 border-l-4 border-[#CE1C00] p-3 rounded-xl">
+                                <p class="font-bold text-[#CE1C00] text-sm">⛔ Registro no permitido</p>
+                                <p class="text-xs text-gray-700 mt-1">Se requiere ser <strong>mayor de 18 años</strong> para registrar comercios en el directorio oficial.</p>
+                            </div>
+                        `);
+                        conversationState.step = 'MAIN_MENU';
+                        setTimeout(() => appendBotMessage(`<button onclick="restartChat()" class="mt-1 bg-[#075E54] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center">🏠 Volver al Menú Principal</button>`), 500);
+                        return;
+                    }
+
+                    conversationState.registrationData.fechaNacimiento = input;
+                    conversationState.registrationData.edadCalculada = age ? `${age} años` : 'Mayor de edad';
+                    conversationState.step = 'REG_STEP5';
+
+                    appendBotMessage(`
+                        <p class="font-semibold text-gray-800">Paso 5 de 6:</p>
+                        <p class="text-sm">¿En qué <strong>Barrio o Sector</strong> de Planeta Rica está ubicado?</p>
+                    `);
+                }
+                else if (currentStep === 'REG_STEP5') {
+                    conversationState.registrationData.barrio = input;
+                    conversationState.step = 'REG_STEP6';
+                    appendBotMessage(`
+                        <p class="font-semibold text-gray-800">Paso 6 de 6:</p>
+                        <p class="text-sm">¿Número de Teléfono o WhatsApp de contacto?</p>
+                    `);
+                }
+                else if (currentStep === 'REG_STEP6') {
+                    conversationState.registrationData.tel = input;
+                    
+                    const newBusiness = {
+                        nombre: conversationState.registrationData.nombre,
+                        propietario: conversationState.registrationData.propietario,
+                        barrio: conversationState.registrationData.barrio,
+                        tel: conversationState.registrationData.tel,
+                        rating: "5.0",
+                        verificado: true,
+                        especialidad: conversationState.registrationData.categoria
+                    };
+                    
+                    initialDirectory['1'].push(newBusiness);
+
+                    appendBotMessage(`
+                        <div class="bg-green-50 border-2 border-[#008000] p-3 rounded-2xl text-center shadow-sm">
+                            <h4 class="font-bold text-green-900 text-base">¡Pre-registro Exitoso! 📋</h4>
+                            <div class="bg-white p-2.5 rounded-xl border border-green-200 text-left my-2 text-xs space-y-1">
+                                <p class="font-bold text-gray-900">${escapeHTML(newBusiness.nombre)}</p>
+                                <p class="text-gray-600">🏷️ Categoría: <strong>${escapeHTML(newBusiness.especialidad)}</strong></p>
+                                <p class="text-gray-600">👤 Propietario: <strong>${escapeHTML(newBusiness.propietario)}</strong></p>
+                                <p class="text-gray-600">📍 Barrio: <strong>${escapeHTML(newBusiness.barrio)}</strong></p>
+                                <p class="text-gray-600">📞 Tel: <strong>${escapeHTML(newBusiness.tel)}</strong></p>
+                            </div>
+                            <div class="bg-yellow-50 border border-yellow-300 p-2 rounded-xl text-left text-xs text-amber-900 font-medium my-2">
+                                ℹ️ Un asesor de PlanetaRica Conecta se comunicará al número brindado para verificar la información complementaria antes de otorgar el <strong>Sello Verificado ✅</strong>.
+                            </div>
+                        </div>
+                    `);
+
+                    conversationState.step = 'MAIN_MENU';
+                    setTimeout(() => appendBotMessage(`<button onclick="restartChat()" class="mt-1 bg-[#075E54] text-white text-xs font-bold px-3 py-2 rounded-xl w-full text-center">🏠 Menú Principal</button>`), 800);
+                }
+
+            }, 500);
+        }
+
+        // --- TARJETAS COMERCIALES ---
+        function renderBusinessCards(list) {
+            list.forEach(item => {
+                const cardHTML = `
+                    <div class="bg-white border-2 border-green-600/30 rounded-2xl p-3 my-2 shadow-md relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
+                            <span class="bg-yellow-100 text-yellow-800 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-yellow-300">
+                                ★ ${item.rating} Sello Verificado ✅
+                            </span>
+                            <span class="text-[11px] font-semibold text-[#2146F0] bg-blue-50 px-2 py-0.5 rounded-md">
+                                Planeta Rica
+                            </span>
+                        </div>
+
+                        <h3 class="font-bold text-base text-gray-900 leading-snug">${escapeHTML(item.nombre)}</h3>
+                        <p class="text-xs text-gray-600 mt-1">👤 Propietario: <strong>${escapeHTML(item.propietario)}</strong></p>
+                        <p class="text-xs text-gray-600">📍 Barrio: <strong>${escapeHTML(item.barrio)}</strong></p>
+                        ${item.especialidad ? `<p class="text-xs text-gray-500 italic mt-0.5">🏷️ ${escapeHTML(item.especialidad)}</p>` : ''}
+
+                        <div class="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-gray-100">
+                            <button onclick="makeCall('${item.nombre}', '${item.tel}')" class="bg-[#CE1C00] text-white font-bold text-xs py-2.5 px-2 rounded-xl flex items-center justify-center gap-1 shadow active:scale-95">
+                                <i data-lucide="phone" class="w-4 h-4"></i> Llamar Directo
+                            </button>
+                            <button onclick="openWhatsApp('${item.nombre}', '${item.tel}')" class="bg-[#25D366] text-white font-bold text-xs py-2.5 px-2 rounded-xl flex items-center justify-center gap-1 shadow active:scale-95">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                `;
+                appendBotMessage(cardHTML);
+            });
+        }
+
+        // --- INTERACCIONES ---
+        function makeCall(nombre, tel) {
+            document.getElementById('modalTitle').innerText = `Llamando a ${nombre}`;
+            document.getElementById('modalBody').innerHTML = `Marcando al número local:<br><strong class="text-lg text-gray-900">${tel}</strong>`;
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function openWhatsApp(nombre, tel) {
+            document.getElementById('modalTitle').innerText = `Chat con ${nombre}`;
+            document.getElementById('modalBody').innerHTML = `Abriendo chat de WhatsApp con el comercio:<br><strong class="text-lg text-green-700">${tel}</strong>`;
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        function restartChat() {
+            conversationState = { step: 'MAIN_MENU', selectedCategory: null, registrationData: {} };
+            showInitialWelcome();
+        }
+    </script>
+</body>
+</html>
